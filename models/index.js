@@ -20,25 +20,22 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
-db.role = require("../models/role.model.js")(sequelize, Sequelize);
-db.refreshToken = require("../models/refreshToken.model.js")(sequelize, Sequelize);
+ db.category = require("../models/category.model")(sequelize, Sequelize);
+ db.produit = require("../models/produit.model")(sequelize, Sequelize);
+ db.order = require("../models/order.model")(sequelize, Sequelize);
 
-db.role.belongsToMany(db.user, {
-  through: "user_roles",
-  foreignKey: "roleId",
-  otherKey: "userId"
-});
-db.refreshToken.belongsTo(db.user, {
-  foreignKey: 'userId', targetKey: 'id'
-});
-db.user.hasOne(db.refreshToken, {
-  foreignKey: 'userId', targetKey: 'id'
-});
+ //realation produit category
+ db.category.hasMany(db.produit, { as: "produits" });
+ db.produit.belongsTo( db.category, {
+   foreignKey: "categoryId",
+   as: "category",
+ });
 
-db.user.belongsToMany(db.role, {
-  through: "user_roles",
-  foreignKey: "userId",
-  otherKey: "roleId"
-});
-db.ROLES = ["user", "admin", "moderator"];
+ //relation order client
+ db.user.hasMany(db.order, { as: "orders" });
+ db.order.belongsTo( db.user, {
+   foreignKey: "userId",
+   as: "users",
+ });
+ 
 module.exports = db;

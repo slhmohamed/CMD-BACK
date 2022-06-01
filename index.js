@@ -1,33 +1,19 @@
 const express = require("express");
-const cors = require("cors");
+const cors = require('cors');
+
 const app = express();
-var corsOptions = {
-  origin: "http://localhost:8081"
-};
+app.use(cors({
+  origin: 'http://localhost:4000'
+}));
 const db = require("./models/index");
-const Role = db.role;
-db.sequelize.sync({force: true}).then(() => {
-  console.log('Drop and Resync Db');
+db.sequelize.sync().then(() => {
+   
   initial();
 });
-function initial() {
-    Role.create({
-      id: 1,
-      name: "user"
-    });
-   
-    Role.create({
-      id: 2,
-      name: "moderator"
-    });
-   
-    Role.create({
-      id: 3,
-      name: "admin"
-    });
-  }
-app.use(cors(corsOptions));
-// parse requests of content-type - application/json
+ function initial(){
+   console.log("connected");
+ }
+ // parse requests of content-type - application/json
 app.use(express.json());
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
@@ -35,8 +21,22 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to bezkoder application." });
 });
-require('./routes/auth.routes')(app);
-require('./routes/user.routes')(app);
+ app.use(express.urlencoded({ extended: true }));
+ app.use(express.static("uploads"));
+ 
+const userRoute =require("./routes/user.routes");
+const CategoryRoute =require("./routes/category.routes");
+const authRoute =require("./routes/auth.routes");
+const productRoute =require("./routes/product.routes");
+const orderRoute =require("./routes/order.controller");
+
+
+app.use(express.json());
+app.use("/api/product", productRoute);
+app.use("/api/category", CategoryRoute);
+app.use("/api/auth", authRoute);
+app.use("/api/user", userRoute);
+app.use("/api/order", orderRoute);
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

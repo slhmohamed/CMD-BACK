@@ -1,59 +1,42 @@
 const db = require("../models");
-const { user: User } = db;
-var jwt = require("jsonwebtoken");
-var bcrypt = require("bcryptjs");
-exports.getAllAdmin = (req, res) => {
- 
-
-User.findAll({ where: { role: "Admin" } })
-
-.then(data => {
-
-res.send(data);
-
-})
-
-.catch(err => {
-
-res.status(500).send({
-
-message:
-
-err.message || "Some error occurred while retrieving tutorials."
-
-});
-
-});
-
-};
-exports.getAllClient = (req, res) => {
- 
-
-  User.findAll({ where: { role: "Client" } })
+const { user: User, role: Role,category: Category } = db;
+exports.create = (req, res) => {
+    // Validate request
   
-  .then(data => {
   
-  res.send(data);
+     const category = {
+        name: req.body.name,
+      description: req.body.description,
+      
+    };
   
-  })
-  
-  .catch(err => {
-  
-  res.status(500).send({
-  
-  message:
-  
-  err.message || "Some error occurred while retrieving tutorials."
-  
-  });
-  
-  });
-  
-  }; 
-  exports.getSingleAdmin = (req, res) => {
+     Category.create(category)
+      .then(data => {
+        res.send(data);
+      })
+      .catch(err => {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while creating the Tutorial."
+        });
+      });
+  };
+exports.getAllCategory = (req, res) => {
+    Category.findAll()
+    .then(data => {
+      res.send(data);
+    })
+    .catch(err => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while retrieving tutorials."
+      });
+    });
+  } 
+  exports.findOneCategory = (req, res) => {
     const id = req.params.id;
   
-    User.findByPk(id)
+    Category.findByPk(id)
       .then(data => {
         res.send(data);
       })
@@ -63,16 +46,10 @@ exports.getAllClient = (req, res) => {
         });
       });
   };
-  exports.updateAdmin = (req, res) => {
+  exports.updateCategory = (req, res) => {
     const id = req.params.id;
-    const current=User.findByPk(id)
-    if(req.body.password){
-      req.body.password  = bcrypt.hashSync(req.body.password, 8) 
-    }else{
-      req.body.password=current.password
-    }
-
-    User.update(req.body, {
+  
+    Category.update(req.body, {
       where: { id: id }
     })
       .then(num => {
@@ -92,11 +69,11 @@ exports.getAllClient = (req, res) => {
         });
       });
   };
-  exports.deleteAdmin = (req, res) => {
+  exports.deleteCategory = (req, res) => {
      
-    const id = req.params.id_admin;
+    const id = req.params.id_categorie;
    
-    User.destroy({
+    Category.destroy({
       where: { id: id }
     }) 
       .then(num => {
@@ -116,6 +93,3 @@ exports.getAllClient = (req, res) => {
         });
       });
   };
- 
-  
-   

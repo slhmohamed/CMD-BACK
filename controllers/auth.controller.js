@@ -1,46 +1,41 @@
 const db = require("../models");
 const config = require("../config/auth.config");
-const { user: User, role: Role, refreshToken: RefreshToken } = db;
+const { user: User  } = db;
 
 const Op = db.Sequelize.Op;
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
-exports.signup = (req, res) => {
+exports.signup = async(req, res) => {
   // Save User to Database
   console.log(req.body);
-  User.create({
-    username: req.body.username,
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 8) 
-  })
-    .then(user => {
-      if (req.body.roles) {
-        Role.findAll({
-          where: {
-            name: {
-              [Op.or]: req.body.roles
-            }
-          }
-        }).then(roles => {
-          user.setRoles(roles).then(() => {
-            res.send({ message: "User was registered successfully!" });
-          });
-        });
-      } else {
-        // user role = 1
-        user.setRoles([1]).then(() => {
-          res.send({ message: "User was registered successfully!" });
-        });
-      }
+  let user= await User.findAll({ where: { email: req.body.email } })
+  console.log(user.length==0);
+  if(user.length>0)
+ {
+  res.status(500).send({ message: "Email already used" });
+ }else{
+      
+    User.create({
+      username: req.body.username,
+      email: req.body.email,
+      tel:req.body.tel,
+      role:req.body.role,
+      adress:req.body.adress,
+      password: bcrypt.hashSync(req.body.password, 8) 
     })
-    .catch(err => {
-      res.status(500).send({ message: err.message });
-    });
+      .then(user => {
+         
+              res.send({ message: "User was registered successfully!" });
+      })
+      .catch(err => {
+        res.status(500).send({ message: err.message });
+      });
+    }
 };
 exports.signin = (req, res) => {
   User.findOne({
     where: {
-      username: req.body.username
+      email: req.body.email
     }
   })
     .then(async (user) => {
@@ -60,55 +55,18 @@ exports.signin = (req, res) => {
       const token = jwt.sign({ id: user.id }, config.secret, {
         expiresIn: config.jwtExpiration
       });
-      let refreshToken = await RefreshToken.createToken(user);
-      let authorities = [];
-      user.getRoles().then(roles => {
-        for (let i = 0; i < roles.length; i++) {
-          authorities.push("ROLE_" + roles[i].name.toUpperCase());
-        }
+     
+        
         res.status(200).send({
           id: user.id,
           username: user.username,
           email: user.email,
-          roles: authorities,
-          accessToken: token,
-          refreshToken: refreshToken,
-        });
-      });
+           accessToken: token,
+         });
+     
     })
     .catch(err => {
       res.status(500).send({ message: err.message });
     });
 };
-exports.refreshToken = async (req, res) => {
-  const { refreshToken: requestToken } = req.body;
-  if (requestToken == null) {
-    return res.status(403).json({ message: "Refresh Token is required!" });
-  }
-  try {
-    let refreshToken = await RefreshToken.findOne({ where: { token: requestToken } });
-    console.log(refreshToken)
-    if (!refreshToken) {
-      res.status(403).json({ message: "Refresh token is not in database!" });
-      return;
-    }
-    if (RefreshToken.verifyExpiration(refreshToken)) {
-      RefreshToken.destroy({ where: { id: refreshToken.id } });
-      
-      res.status(403).json({
-        message: "Refresh token was expired. Please make a new signin request",
-      });
-      return;
-    }
-    const user = await refreshToken.getUser();
-    let newAccessToken = jwt.sign({ id: user.id }, config.secret, {
-      expiresIn: config.jwtExpiration,
-    });
-    return res.status(200).json({
-      accessToken: newAccessToken,
-      refreshToken: refreshToken.token,
-    });
-  } catch (err) {
-    return res.status(500).send({ message: err });
-  }
-};
+ 
